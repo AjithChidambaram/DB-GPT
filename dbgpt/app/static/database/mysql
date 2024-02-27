@@ -1,0 +1,76 @@
+import mysql.connector
+
+# Connect to the original database
+original_conn = mysql.connector.connect(
+    host="your_host",
+    database="original_database",
+    user="your_user",
+    password="your_password"
+)
+
+# Connect to the user database
+user_conn = mysql.connector.connect(
+    host="your_host",
+    database="user_database",
+    user="your_user",
+    password="your_password"
+)
+
+# Connect to the product database
+product_conn = mysql.connector.connect(
+    host="your_host",
+    database="product_database",
+    user="your_user",
+    password="your_password"
+)
+
+# Create cursor objects for each connection
+original_cursor = original_conn.cursor()
+user_cursor = user_conn.cursor()
+product_cursor = product_conn.cursor()
+
+# Create the user table in the user database
+user_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50),
+        email VARCHAR(100)
+    )
+""")
+
+# Create the product table in the product database
+product_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS products (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100),
+        price DECIMAL(10, 2)
+    )
+""")
+
+# Retrieve user data from the original database
+original_cursor.execute("SELECT id, username, email FROM users")
+user_data = original_cursor.fetchall()
+
+# Retrieve product data from the original database
+original_cursor.execute("SELECT id, name, price FROM products")
+product_data = original_cursor.fetchall()
+
+# Insert user data into the user database
+user_cursor.executemany("INSERT INTO users (id, username, email) VALUES (%s, %s, %s)", user_data)
+
+# Insert product data into the product database
+product_cursor.executemany("INSERT INTO products (id, name, price) VALUES (%s, %s, %s)", product_data)
+
+# Commit transactions
+user_conn.commit()
+product_conn.commit()
+
+# Close all connections and cursors
+original_cursor.close()
+user_cursor.close()
+product_cursor.close()
+original_conn.close()
+user_conn.close()
+product_conn.close()
+
+print("Data migration completed successfully.")
